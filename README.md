@@ -1,2 +1,3 @@
-# mdig-spf
+# MartyDig SPF Survey
+
 MartyDig SPF Survey
