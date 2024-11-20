@@ -134,8 +134,6 @@
         window.onload = function() {
            document.getElementById("domain").focus();
        };
-    </script>
-        <script>
         document.addEventListener('selectionchange', () => {
             const selection = window.getSelection();
             const selectedText = selection.toString();
