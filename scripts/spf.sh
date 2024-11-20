@@ -23,11 +23,12 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
-    # Extract "include", "a", "ip4", and "ip6" mechanisms from the SPF record
+    # Extract "include", "a", "ip4", "ip6", and "redirect" mechanisms from the SPF record
     includes=$(echo "$spf" | grep -oP 'include:\S+')
     a_mechanisms=$(echo "$spf" | grep -oP 'a:[^\s]+')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
+    redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
     # Handle 'a:' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
@@ -78,6 +79,14 @@ get_spf() {
                 ip_tracker["$ip6_address"]+="$domain "
             fi
         done
+    fi
+
+    # Handle 'redirect=' mechanism
+    if [ -n "$redirect" ]; then
+        redirect_domain="${redirect#redirect=}"
+        echo -e "${indent}----------------------------------------------------"
+        echo -e "${indent}Following redirect mechanism to: $redirect_domain"
+        get_spf "$redirect_domain" "$indent    "
     fi
 
     # If there are includes, print the separator before fetching the included domain
