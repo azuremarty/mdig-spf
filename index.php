@@ -93,7 +93,7 @@
 
             // Path to your bash script
             // MAKE SURE TO RUN: chmod -R +x scripts/
-            $script = './spf.sh';
+            $script = '.scripts/spf.sh';
 
             // Execute the bash script and capture the output
             $output = shell_exec("$script $domain 2>&1");
