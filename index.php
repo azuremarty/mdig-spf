@@ -135,5 +135,45 @@
            document.getElementById("domain").focus();
        };
     </script>
+        <script>
+        document.addEventListener('selectionchange', () => {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+
+            if (selectedText) {
+                navigator.clipboard.writeText(selectedText)
+                    .then(() => {
+                        showNotification(`Copied: "${selectedText}"`);
+                    })
+                    .catch(err => console.error('Error copying text to clipboard:', err));
+            }
+        });
+
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = '#333';
+            notification.style.color = '#fff';
+            notification.style.padding = '10px 20px';
+            notification.style.borderRadius = '5px';
+            notification.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+            notification.style.zIndex = '1000';
+            notification.style.opacity = '1';
+            notification.style.transition = 'opacity 0.5s ease';
+
+            // Add to body
+            document.body.appendChild(notification);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 500);
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
