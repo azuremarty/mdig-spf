@@ -3,6 +3,51 @@
 # Global associative array to track IPs and where they appear
 declare -A ip_tracker
 
+# Function to resolve A and MX records for the domain
+resolve_a_mx_mechanisms() {
+    domain=$1
+    indent=$2
+
+    # Resolve 'a' and '+a' mechanisms
+    if [[ "$spf" =~ (^|\s)(\+)?a(\s|$) ]]; then
+        echo -e "${indent}'a' mechanism found for $domain"
+        ips=$(dig +short "$domain" A)
+        if [ -z "$ips" ]; then
+            echo -e "${indent}    No IPs found for $domain"
+        else
+            echo -e "${indent}    IPs for $domain:"
+            for ip in $ips; do
+                echo -e "${indent}        $ip"
+                ip_tracker["$ip"]+="$domain "
+            done
+        fi
+    fi
+
+    # Resolve 'mx' and '+mx' mechanisms
+    if [[ "$spf" =~ (^|\s)(\+)?mx(\s|$) ]]; then
+        echo -e "${indent}'mx' mechanism found for $domain"
+        mx_hosts=$(dig +short "$domain" MX | awk '{print $2}')
+        if [ -z "$mx_hosts" ]; then
+            echo -e "${indent}    No MX records found for $domain"
+        else
+            echo -e "${indent}    MX hosts for $domain:"
+            for mx in $mx_hosts; do
+                echo -e "${indent}        $mx"
+                mx_ips=$(dig +short "$mx" A)
+                if [ -z "$mx_ips" ]; then
+                    echo -e "${indent}        No IPs found for $mx"
+                else
+                    echo -e "${indent}        IPs for $mx:"
+                    for ip in $mx_ips; do
+                        echo -e "${indent}            $ip"
+                        ip_tracker["$ip"]+="$domain "
+                    done
+                fi
+            done
+        fi
+    fi
+}
+
 # Function to retrieve SPF records for a given domain, showing them in a tree format
 get_spf() {
     domain=$1
@@ -30,6 +75,9 @@ get_spf() {
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
+    # Call the new resolver for a, +a, mx, and +mx
+    resolve_a_mx_mechanisms "$domain" "$indent"
+
     # Handle 'a:' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
@@ -44,7 +92,6 @@ get_spf() {
                 echo -e "${indent}    IPs for $a_domain:"
                 for ip in $ips; do
                     echo -e "${indent}        $ip"
-                    # Track the IP and its associated domain
                     ip_tracker["$ip"]+="$domain "
                 done
             fi
@@ -60,7 +107,6 @@ get_spf() {
                 echo -e "${indent}    CIDR Range: $ip4_address"
             else
                 echo -e "${indent}    IP: $ip4_address"
-                # Track the IP and its associated domain
                 ip_tracker["$ip4_address"]+="$domain "
             fi
         done
@@ -75,7 +121,6 @@ get_spf() {
                 echo -e "${indent}    CIDR Range: $ip6_address"
             else
                 echo -e "${indent}    IP: $ip6_address"
-                # Track the IP and its associated domain
                 ip_tracker["$ip6_address"]+="$domain "
             fi
         done
@@ -95,11 +140,8 @@ get_spf() {
         for include in $includes; do
             included_domain="${include#*:}"
             
-            # Print separator line before the "Following include mechanism" message
             echo -e "${indent}----------------------------------------------------"
             echo -e "${indent}Following include mechanism: $included_domain"
-            
-            # Recursively call get_spf with more indentation
             get_spf "$included_domain" "$new_indent"
         done
     fi
@@ -119,7 +161,6 @@ echo -e "\nDuplicate IPs and their associated SPF hosts:"
 echo -e "----------------------------------------------------"
 for ip in "${!ip_tracker[@]}"; do
     hosts="${ip_tracker[$ip]}"
-    # Check if the IP appears in more than one domain
     if [[ $(echo "$hosts" | wc -w) -gt 1 ]]; then
         echo -e "IP: $ip"
         echo -e "  Found in SPF hosts: $hosts"
