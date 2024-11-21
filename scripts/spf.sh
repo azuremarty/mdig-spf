@@ -37,8 +37,8 @@ resolve_record() {
                 # Extract the MX host (remove priority number and any trailing period)
                 mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
 
-                # Ensure mx_host is not empty
-                if [ -n "$mx_host" ]; then
+                # Ensure mx_host is not empty and contains a dot (valid domain)
+                if [[ -n "$mx_host" && "$mx_host" == *.* ]]; then
                     echo -e "${indent}        MX Host: $mx_host"
                     # Resolve IPs for MX host
                     mx_ips=$(dig +short "$mx_host")
@@ -51,7 +51,7 @@ resolve_record() {
                         done
                     fi
                 else
-                    echo -e "${indent}        Invalid MX Host: empty value"
+                    echo -e "${indent}        Invalid MX Host: $mx_host"
                 fi
             done
         fi
