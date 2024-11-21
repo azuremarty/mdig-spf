@@ -38,9 +38,9 @@ resolve_record() {
                 # Debug: Output the raw MX record
                 echo -e "${indent}        Raw MX record: $mx"
                 
-                # Extract the MX host, skipping the priority number and trimming the trailing period
+                # Extract the MX host (remove priority number and any trailing period)
                 mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
-                
+
                 # Debug: Check what mx_host looks like
                 echo -e "${indent}        Extracted MX Host: $mx_host"
 
