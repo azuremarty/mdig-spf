@@ -3,12 +3,12 @@
 # Global associative array to track IPs and where they appear
 declare -A ip_tracker
 
-# Function to resolve A and MX records for the domain
+# Function to resolve 'a', '+a', 'mx', and '+mx' mechanisms for the domain
 resolve_a_mx_mechanisms() {
     domain=$1
     indent=$2
 
-    # Resolve 'a' and '+a' mechanisms
+    # Check and resolve 'a' or '+a' mechanisms
     if [[ "$spf" =~ (^|\s)(\+)?a(\s|$) ]]; then
         echo -e "${indent}'a' mechanism found for $domain"
         ips=$(dig +short "$domain" A)
@@ -23,7 +23,7 @@ resolve_a_mx_mechanisms() {
         fi
     fi
 
-    # Resolve 'mx' and '+mx' mechanisms
+    # Check and resolve 'mx' or '+mx' mechanisms
     if [[ "$spf" =~ (^|\s)(\+)?mx(\s|$) ]]; then
         echo -e "${indent}'mx' mechanism found for $domain"
         mx_hosts=$(dig +short "$domain" MX | awk '{print $2}')
@@ -48,15 +48,15 @@ resolve_a_mx_mechanisms() {
     fi
 }
 
-# Function to retrieve SPF records for a given domain, showing them in a tree format
+# Function to retrieve and process SPF records for a domain
 get_spf() {
     domain=$1
     indent=$2
     echo -e "${indent}Fetching SPF record for $domain"
-    
+
     # Fetch the SPF record
     spf=$(dig +short TXT "$domain" | grep -i spf | tr -d '"')
-    
+
     # If no SPF record is found, return
     if [ -z "$spf" ]; then
         echo -e "${indent}No SPF record found for $domain"
@@ -65,40 +65,32 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
-    # Handle 'ip4:' mechanisms and list IP addresses or CIDR
+    # Handle 'ip4:' mechanisms
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     if [ -n "$ip4_mechanisms" ]; then
         for ip4 in $ip4_mechanisms; do
             ip4_address="${ip4#*:}"
             echo -e "${indent}    'ip4:' mechanism found for $ip4_address"
-            if [[ "$ip4_address" =~ / ]]; then
-                echo -e "${indent}    CIDR Range: $ip4_address"
-            else
-                echo -e "${indent}    IP: $ip4_address"
-                ip_tracker["$ip4_address"]+="$domain "
-            fi
+            echo -e "${indent}    IP: $ip4_address"
+            ip_tracker["$ip4_address"]+="$domain "
         done
     fi
 
-    # Handle 'ip6:' mechanisms and list IP addresses or CIDR
+    # Handle 'ip6:' mechanisms
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     if [ -n "$ip6_mechanisms" ]; then
         for ip6 in $ip6_mechanisms; do
             ip6_address="${ip6#*:}"
             echo -e "${indent}    'ip6:' mechanism found for $ip6_address"
-            if [[ "$ip6_address" =~ / ]]; then
-                echo -e "${indent}    CIDR Range: $ip6_address"
-            else
-                echo -e "${indent}    IP: $ip6_address"
-                ip_tracker["$ip6_address"]+="$domain "
-            fi
+            echo -e "${indent}    IP: $ip6_address"
+            ip_tracker["$ip6_address"]+="$domain "
         done
     fi
 
-    # Call resolver for +a, a, +mx, and mx
+    # Resolve 'a', '+a', 'mx', and '+mx' mechanisms
     resolve_a_mx_mechanisms "$domain" "$indent"
 
-    # Extract and handle 'include' mechanisms
+    # Handle 'include' mechanisms
     includes=$(echo "$spf" | grep -oP 'include:\S+')
     if [ -n "$includes" ]; then
         new_indent="${indent}    "
