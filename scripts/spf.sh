@@ -33,6 +33,9 @@ get_spf() {
     # Handle 'a' or '+a' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
+            # Remove the '+' symbol if it exists
+            a="${a#+}"
+            
             # If there's a colon, resolve the A record for the domain after the colon
             a_domain="${a#*:}"
             if [ -z "$a_domain" ]; then
