@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Global associative array to track IPs and where they appear
+# Global associative array to track IPs and their associated domains
 declare -A ip_tracker
 
-# Function to resolve 'a', '+a', 'mx', and '+mx' mechanisms for the domain
+# Function to resolve 'a' and 'mx' mechanisms for the domain
 resolve_a_mx_mechanisms() {
     domain=$1
     indent=$2
 
-    # Check and resolve 'a' or '+a' mechanisms
+    # Resolve 'a' and '+a' mechanisms
     if [[ "$spf" =~ (^|\s)(\+)?a(\s|$) ]]; then
         echo -e "${indent}'a' mechanism found for $domain"
         ips=$(dig +short "$domain" A)
@@ -23,7 +23,7 @@ resolve_a_mx_mechanisms() {
         fi
     fi
 
-    # Check and resolve 'mx' or '+mx' mechanisms
+    # Resolve 'mx' and '+mx' mechanisms
     if [[ "$spf" =~ (^|\s)(\+)?mx(\s|$) ]]; then
         echo -e "${indent}'mx' mechanism found for $domain"
         mx_hosts=$(dig +short "$domain" MX | awk '{print $2}')
@@ -65,6 +65,9 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
+    # Resolve 'a', '+a', 'mx', and '+mx' mechanisms
+    resolve_a_mx_mechanisms "$domain" "$indent"
+
     # Handle 'ip4:' mechanisms
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     if [ -n "$ip4_mechanisms" ]; then
@@ -87,9 +90,6 @@ get_spf() {
         done
     fi
 
-    # Resolve 'a', '+a', 'mx', and '+mx' mechanisms
-    resolve_a_mx_mechanisms "$domain" "$indent"
-
     # Handle 'include' mechanisms
     includes=$(echo "$spf" | grep -oP 'include:\S+')
     if [ -n "$includes" ]; then
@@ -102,7 +102,7 @@ get_spf() {
         done
     fi
 
-    # Handle 'redirect=' mechanism
+    # Handle 'redirect=' mechanisms
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
     if [ -n "$redirect" ]; then
         redirect_domain="${redirect#redirect=}"
