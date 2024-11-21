@@ -25,22 +25,22 @@ get_spf() {
 
     # Extract "include", "a", "+a", "ip4", "ip6", and "redirect" mechanisms from the SPF record
     includes=$(echo "$spf" | grep -oP 'include:\S+')
-    a_mechanisms=$(echo "$spf" | grep -oP '\+?a:[^\s]*')
+    a_mechanisms=$(echo "$spf" | grep -oP '\+?a(:\S*)?')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
-    # Handle 'a:' and '+a:' mechanisms and list associated IP addresses
+    # Handle 'a' or '+a' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
-            # If the domain is empty after the colon, we use the current domain
+            # If no domain is specified after the colon, resolve the A record for the current domain
             a_domain="${a#*:}"
             if [ -z "$a_domain" ]; then
-                a_domain="$domain"  # Use the current domain
+                a_domain="$domain"  # Use the current domain for A record lookup
             fi
-            echo -e "${indent}    'a:' or '+a:' mechanism found for $a_domain"
+            echo -e "${indent}    'a' or '+a' mechanism found for $a_domain"
             
-            # Resolve IPs for the 'a:' or '+a:' mechanism
+            # Resolve IPs for the 'a' or '+a' mechanism
             ips=$(dig +short "$a_domain")
             if [ -z "$ips" ]; then
                 echo -e "${indent}    No IPs found for $a_domain"
