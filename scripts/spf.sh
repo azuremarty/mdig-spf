@@ -33,9 +33,10 @@ get_spf() {
     # Handle 'a:' and '+a:' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
+            # If the domain is empty after the colon, we use the current domain
             a_domain="${a#*:}"
             if [ -z "$a_domain" ]; then
-                a_domain="$domain"  # If there's nothing after "a:", use the current domain
+                a_domain="$domain"  # Use the current domain
             fi
             echo -e "${indent}    'a:' or '+a:' mechanism found for $a_domain"
             
