@@ -33,9 +33,10 @@ resolve_record() {
         else
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
-                # Extract the MX host using awk
+                # Extract the MX host, skipping the priority number
                 mx_host=$(echo $mx | awk '{print $2}')
-                if [ -n "$mx_host" ]; then  # Ensure mx_host is not empty
+                # Ensure mx_host is not empty
+                if [ -n "$mx_host" ]; then
                     echo -e "${indent}        MX Host: $mx_host"
                     # Resolve IPs for MX host
                     mx_ips=$(dig +short "$mx_host")
