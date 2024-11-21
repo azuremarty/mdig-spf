@@ -23,20 +23,23 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
-    # Extract "include", "a", "ip4", "ip6", and "redirect" mechanisms from the SPF record
+    # Extract "include", "a", "+a", "ip4", "ip6", and "redirect" mechanisms from the SPF record
     includes=$(echo "$spf" | grep -oP 'include:\S+')
-    a_mechanisms=$(echo "$spf" | grep -oP 'a:[^\s]+')
+    a_mechanisms=$(echo "$spf" | grep -oP '\+?a:[^\s]*')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
-    # Handle 'a:' mechanisms and list associated IP addresses
+    # Handle 'a:' and '+a:' mechanisms and list associated IP addresses
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
             a_domain="${a#*:}"
-            echo -e "${indent}    'a:' mechanism found for $a_domain"
+            if [ -z "$a_domain" ]; then
+                a_domain="$domain"  # If there's nothing after "a:", use the current domain
+            fi
+            echo -e "${indent}    'a:' or '+a:' mechanism found for $a_domain"
             
-            # Resolve IPs for the 'a:' mechanism
+            # Resolve IPs for the 'a:' or '+a:' mechanism
             ips=$(dig +short "$a_domain")
             if [ -z "$ips" ]; then
                 echo -e "${indent}    No IPs found for $a_domain"
@@ -95,7 +98,7 @@ get_spf() {
         for include in $includes; do
             included_domain="${include#*:}"
             
-            # Print separator line before the "Following inclup.cde mechanism" message
+            # Print separator line before the "Following include mechanism" message
             echo -e "${indent}----------------------------------------------------"
             echo -e "${indent}Following include mechanism: $included_domain"
             
