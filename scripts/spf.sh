@@ -34,16 +34,20 @@ resolve_record() {
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
                 mx_host=$(echo $mx | awk '{print $2}')
-                echo -e "${indent}        MX Host: $mx_host"
-                # Resolve IPs for MX host
-                mx_ips=$(dig +short "$mx_host")
-                if [ -z "$mx_ips" ]; then
-                    echo -e "${indent}        No IPs found for MX Host: $mx_host"
+                if [ -n "$mx_host" ]; then  # Ensure mx_host is not empty
+                    echo -e "${indent}        MX Host: $mx_host"
+                    # Resolve IPs for MX host
+                    mx_ips=$(dig +short "$mx_host")
+                    if [ -z "$mx_ips" ]; then
+                        echo -e "${indent}        No IPs found for MX Host: $mx_host"
+                    else
+                        for mx_ip in $mx_ips; do
+                            echo -e "${indent}            $mx_ip"
+                            ip_tracker["$mx_ip"]+="$domain "
+                        done
+                    fi
                 else
-                    for mx_ip in $mx_ips; do
-                        echo -e "${indent}            $mx_ip"
-                        ip_tracker["$mx_ip"]+="$domain "
-                    done
+                    echo -e "${indent}        Invalid MX Host: empty value"
                 fi
             done
         fi
