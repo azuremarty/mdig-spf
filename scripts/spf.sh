@@ -27,7 +27,7 @@ resolve_record() {
 
     # Handle 'mx' mechanism (resolve MX record)
     if [[ "$mechanism" == "mx" || "$mechanism" == "+mx" ]]; then
-        mx_records=$(dig +short MX "$domain")
+        mx_records=$(dig +short MX "$domain" | grep -v '^$')
         if [ -z "$mx_records" ]; then
             echo -e "${indent}    No MX records found for $domain"
         else
