@@ -23,9 +23,10 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
-    # Extract "include", "a", "ip4", "ip6", and "redirect" mechanisms from the SPF record
+    # Extract "include", "a", "mx", "ip4", "ip6", and "redirect" mechanisms from the SPF record
     includes=$(echo "$spf" | grep -oP 'include:\S+')
     a_mechanisms=$(echo "$spf" | grep -oP 'a:[^\s]+')
+    mx_mechanisms=$(echo "$spf" | grep -oP 'mx:[^\s]+')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
@@ -46,6 +47,38 @@ get_spf() {
                     echo -e "${indent}        $ip"
                     # Track the IP and its associated domain
                     ip_tracker["$ip"]+="$domain "
+                done
+            fi
+        done
+    fi
+
+    # Handle 'mx:' mechanisms and list IP addresses of MX records
+    if [ -n "$mx_mechanisms" ]; then
+        for mx in $mx_mechanisms; do
+            mx_domain="${mx#*:}"
+            echo -e "${indent}    'mx:' mechanism found for $mx_domain"
+            
+            # Resolve MX records for the domain
+            mx_hosts=$(dig +short MX "$mx_domain")
+            if [ -z "$mx_hosts" ]; then
+                echo -e "${indent}    No MX records found for $mx_domain"
+            else
+                echo -e "${indent}    MX hosts for $mx_domain:"
+                for mx_host in $mx_hosts; do
+                    mx_host_name=$(echo "$mx_host" | awk '{print $2}')
+                    echo -e "${indent}        MX Host: $mx_host_name"
+                    
+                    # Resolve IPs for the MX host
+                    mx_ips=$(dig +short "$mx_host_name")
+                    if [ -z "$mx_ips" ]; then
+                        echo -e "${indent}        No IPs found for $mx_host_name"
+                    else
+                        for mx_ip in $mx_ips; do
+                            echo -e "${indent}        IP: $mx_ip"
+                            # Track the IP and its associated domain
+                            ip_tracker["$mx_ip"]+="$domain "
+                        done
+                    fi
                 done
             fi
         done
