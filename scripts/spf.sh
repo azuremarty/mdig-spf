@@ -34,6 +34,9 @@ resolve_record() {
         else
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
+                # Debugging: Print the raw MX record for troubleshooting
+                echo -e "${indent}        Raw MX record: $mx"
+                
                 # Extract the MX host (remove priority number and any trailing period)
                 mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
 
