@@ -33,8 +33,9 @@ resolve_record() {
         else
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
-                # Extract the MX host, skipping the priority number
-                mx_host=$(echo $mx | awk '{print $2}')
+                # Extract the MX host, skipping the priority number and trimming the trailing period
+                mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
+                
                 # Ensure mx_host is not empty
                 if [ -n "$mx_host" ]; then
                     echo -e "${indent}        MX Host: $mx_host"
