@@ -18,26 +18,25 @@ get_spf() {
         return
     fi
 
-    # Merge split SPF record (e.g., ip6:260 3:10a6::/32 -> ip6:2603:10a6::/32)
-    spf=$(echo "$spf" | tr -s ' ' | sed -E 's/(ip6:[0-9]+) ([a-f0-9:]+)/\1\2/g')
-
     echo -e "${indent}SPF record for $domain: $spf"
 
     # Extract mechanisms from SPF record
-    a_mechanisms=$(echo "$spf" | grep -oP 'a:[^\s]+')
-    mx_mechanisms=$(echo "$spf" | grep -oP 'mx:[^\s]+')
+    a_mechanisms=$(echo "$spf" | grep -oP 'a(:\S+)?')
+    mx_mechanisms=$(echo "$spf" | grep -oP 'mx(:\S+)?')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
     includes=$(echo "$spf" | grep -oP 'include:\S+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
-    # Handle 'a:' mechanisms and list associated IP addresses
+    # Handle 'a' mechanisms (both +a and a)
     if [ -n "$a_mechanisms" ]; then
         for a in $a_mechanisms; do
+            # Extract the domain (after `a:` if it exists)
             a_domain="${a#*:}"
-            echo -e "${indent}    'a:' mechanism found for $a_domain"
+            a_domain="${a_domain:-$domain}"  # default to the original domain if no subdomain
+            echo -e "${indent}    'a' mechanism found for $a_domain"
             
-            # Resolve IPs for the 'a:' mechanism
+            # Resolve IPs for the 'a' mechanism
             ips=$(dig +short "$a_domain")
             if [ -z "$ips" ]; then
                 echo -e "${indent}    No IPs found for $a_domain"
@@ -52,11 +51,13 @@ get_spf() {
         done
     fi
 
-    # Handle 'mx:' mechanisms and list IP addresses of MX records
+    # Handle 'mx' mechanisms (both +mx and mx)
     if [ -n "$mx_mechanisms" ]; then
         for mx in $mx_mechanisms; do
+            # Extract the domain (after `mx:` if it exists)
             mx_domain="${mx#*:}"
-            echo -e "${indent}    'mx:' mechanism found for $mx_domain"
+            mx_domain="${mx_domain:-$domain}"  # default to the original domain if no subdomain
+            echo -e "${indent}    'mx' mechanism found for $mx_domain"
             
             # Resolve MX records for the domain
             mx_hosts=$(dig +short MX "$mx_domain")
@@ -88,7 +89,7 @@ get_spf() {
     if [ -n "$ip4_mechanisms" ]; then
         for ip4 in $ip4_mechanisms; do
             ip4_address="${ip4#*:}"
-            echo -e "${indent}    'ip4:' mechanism found for $ip4_address"
+            echo -e "${indent}    'ip4' mechanism found for $ip4_address"
             if [[ "$ip4_address" =~ / ]]; then
                 echo -e "${indent}    CIDR Range: $ip4_address"
             else
@@ -103,7 +104,7 @@ get_spf() {
     if [ -n "$ip6_mechanisms" ]; then
         for ip6 in $ip6_mechanisms; do
             ip6_address="${ip6#*:}"
-            echo -e "${indent}    'ip6:' mechanism found for $ip6_address"
+            echo -e "${indent}    'ip6' mechanism found for $ip6_address"
             if [[ "$ip6_address" =~ / ]]; then
                 echo -e "${indent}    CIDR Range: $ip6_address"
             else
@@ -128,7 +129,7 @@ get_spf() {
         for include in $includes; do
             included_domain="${include#*:}"
             
-            # Print separator line before the "Following inclup.cde mechanism" message
+            # Print separator line before the "Following include mechanism" message
             echo -e "${indent}----------------------------------------------------"
             echo -e "${indent}Following include mechanism: $included_domain"
             
