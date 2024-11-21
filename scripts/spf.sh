@@ -33,6 +33,7 @@ resolve_record() {
         else
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
+                # Extract the MX host using awk
                 mx_host=$(echo $mx | awk '{print $2}')
                 if [ -n "$mx_host" ]; then  # Ensure mx_host is not empty
                     echo -e "${indent}        MX Host: $mx_host"
