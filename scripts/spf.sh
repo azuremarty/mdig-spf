@@ -27,15 +27,23 @@ resolve_record() {
 
     # Handle 'mx' mechanism (resolve MX record)
     if [[ "$mechanism" == "mx" || "$mechanism" == "+mx" ]]; then
+        echo -e "${indent}    Resolving mx record for $domain"
         mx_records=$(dig +short MX "$domain" | grep -v '^$')
+        
         if [ -z "$mx_records" ]; then
             echo -e "${indent}    No MX records found for $domain"
         else
             echo -e "${indent}    MX records for $domain:"
             for mx in $mx_records; do
+                # Debug: Output the raw MX record
+                echo -e "${indent}        Raw MX record: $mx"
+                
                 # Extract the MX host, skipping the priority number and trimming the trailing period
                 mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
                 
+                # Debug: Check what mx_host looks like
+                echo -e "${indent}        Extracted MX Host: $mx_host"
+
                 # Ensure mx_host is not empty
                 if [ -n "$mx_host" ]; then
                     echo -e "${indent}        MX Host: $mx_host"
