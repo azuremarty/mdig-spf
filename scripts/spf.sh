@@ -3,7 +3,7 @@
 # Global associative array to track IPs and where they appear
 declare -A ip_tracker
 
-# Function to retrieve SPF records for a given domain, showing them in a tree format
+# Function to retrieve SPF records for a given domain
 get_spf() {
     domain=$1
     indent=$2
@@ -23,12 +23,12 @@ get_spf() {
 
     echo -e "${indent}SPF record for $domain: $spf"
 
-    # Extract "include", "a", "mx", "ip4", "ip6", and "redirect" mechanisms from the SPF record
-    includes=$(echo "$spf" | grep -oP 'include:\S+')
+    # Extract mechanisms from SPF record
     a_mechanisms=$(echo "$spf" | grep -oP 'a:[^\s]+')
     mx_mechanisms=$(echo "$spf" | grep -oP 'mx:[^\s]+')
     ip4_mechanisms=$(echo "$spf" | grep -oP 'ip4:[^\s]+')
     ip6_mechanisms=$(echo "$spf" | grep -oP 'ip6:[^\s]+')
+    includes=$(echo "$spf" | grep -oP 'include:\S+')
     redirect=$(echo "$spf" | grep -oP 'redirect=[^\s]+')
 
     # Handle 'a:' mechanisms and list associated IP addresses
