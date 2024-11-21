@@ -37,7 +37,7 @@ resolve_record() {
                 # Debugging: Print the raw MX record for troubleshooting
                 echo -e "${indent}        Raw MX record: $mx"
                 
-                # Extract the MX host (remove priority number and any trailing period)
+                # Extract the MX host by removing priority and any trailing period
                 mx_host=$(echo $mx | awk '{print $2}' | sed 's/\.$//')
 
                 # Ensure mx_host is not empty and contains a dot (valid domain)
