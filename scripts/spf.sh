@@ -114,7 +114,7 @@ fi
 domain=$1
 get_spf "$domain" ""
 
-# Detect and report duplicate IPs
+# Detect and report duplicateee IPs
 echo -e "\nDuplicate IPs and their associated SPF hosts:"
 echo -e "----------------------------------------------------"
 for ip in "${!ip_tracker[@]}"; do
